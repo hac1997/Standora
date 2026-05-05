@@ -1,0 +1,177 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id             String    @id @default(cuid())
+  name           String
+  email          String    @unique
+  emailVerified  DateTime?
+  password       String?
+  role           String    @default("admin")
+  organizationId String?
+  createdAt      DateTime  @default(now())
+
+  organization Organization? @relation(fields: [organizationId], references: [id])
+  accounts     Account[]
+  sessions     Session[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  cnpj      String?
+  logoUrl   String?
+  createdAt DateTime @default(now())
+
+  users  User[]
+  events Event[]
+}
+
+model Event {
+  id                    String   @id @default(cuid())
+  organizationId        String
+  name                  String
+  slug                  String   @unique
+  type                  String   @default("feira")
+  status                String   @default("rascunho")
+  startDate             DateTime
+  endDate               DateTime
+  coverUrl              String?
+  description           String?
+  estimatedParticipants Int      @default(0)
+  estimatedExhibitors   Int      @default(0)
+  createdAt             DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  map          EventMap?
+  stands       Stand[]
+  exhibitors   Exhibitor[]
+  expenses     Expense[]
+  staffShifts  StaffShift[]
+}
+
+model EventMap {
+  id         String   @id @default(cuid())
+  eventId    String   @unique
+  canvasJson String   @default("{\"stands\":[],\"areas\":[]}")
+  floorPlanUrl String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+}
+
+model Stand {
+  id          String   @id @default(cuid())
+  eventId     String
+  name        String
+  widthM      Float    @default(3)
+  depthM      Float    @default(3)
+  positionX   Float    @default(0)
+  positionY   Float    @default(0)
+  colorHex    String   @default("#22c55e")
+  basePrice   Float    @default(0)
+  status      String   @default("disponivel")
+  exhibitorId String?
+  createdAt   DateTime @default(now())
+
+  event     Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  exhibitor Exhibitor? @relation(fields: [exhibitorId], references: [id])
+}
+
+model Exhibitor {
+  id          String   @id @default(cuid())
+  eventId     String
+  companyName String
+  cnpj        String?
+  contactName String
+  email       String
+  phone       String?
+  status      String   @default("pendente")
+  createdAt   DateTime @default(now())
+
+  event  Event   @relation(fields: [eventId], references: [id])
+  stands Stand[]
+}
+
+model Expense {
+  id          String   @id @default(cuid())
+  eventId     String
+  description String
+  category    String   @default("outros")
+  amount      Float
+  dueDate     DateTime
+  paidAt      DateTime?
+  status      String   @default("pendente")
+  createdAt   DateTime @default(now())
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+}
+
+model StaffMember {
+  id           String   @id @default(cuid())
+  name         String
+  email        String
+  phone        String?
+  role         String   @default("operacional")
+  type         String   @default("proprio")
+  dailyRate    Float    @default(0)
+  createdAt    DateTime @default(now())
+
+  shifts StaffShift[]
+}
+
+model StaffShift {
+  id            String   @id @default(cuid())
+  eventId       String
+  staffMemberId String
+  sector        String
+  startTime     DateTime
+  endTime       DateTime
+  status        String   @default("confirmado")
+  createdAt     DateTime @default(now())
+
+  event       Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  staffMember StaffMember @relation(fields: [staffMemberId], references: [id])
+}
