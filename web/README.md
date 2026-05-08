@@ -45,13 +45,14 @@ npm install
 npx prisma generate
 ```
 
-### 5. Crie o banco de dados e aplique as migrations
+### 5. Sincronize o schema com o banco de dados
 
 ```bash
-npx prisma migrate deploy
+npx prisma db push
 ```
 
-> Isso cria o arquivo `dev.db` localmente com toda a estrutura de tabelas.
+> O projeto usa `db push` (sem migration files). Isso cria o `dev.db` e garante que a estrutura de tabelas está em dia com o schema.
+> Se o `dev.db` já existe (está no repositório), este passo apenas confirma que está sincronizado.
 
 ### 6. Popule o banco com dados iniciais
 
@@ -87,7 +88,7 @@ Após rodar o seed, utilize as credenciais abaixo para entrar na aplicação:
 ```bash
 npm install
 npx prisma generate
-npx prisma migrate deploy
+npx prisma db push
 npx prisma db seed
 npm run dev
 ```
@@ -99,10 +100,9 @@ npm run dev
 | Comando | O que faz |
 |---|---|
 | `npx prisma generate` | Gera o client tipado a partir do `schema.prisma` |
-| `npx prisma migrate deploy` | Aplica migrations pendentes no banco |
-| `npx prisma migrate dev` | Cria uma nova migration em desenvolvimento |
+| `npx prisma db push` | Sincroniza o schema com o banco (usado neste projeto) |
+| `npx prisma db seed` | Popula o banco com dados iniciais |
 | `npx prisma studio` | Abre interface visual para explorar o banco |
-| `npx prisma db push` | Sincroniza o schema sem criar migration (prototipagem) |
 
 ---
 
