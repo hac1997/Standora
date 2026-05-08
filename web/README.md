@@ -1,36 +1,122 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Standora — Web
 
-## Getting Started
+Plataforma de gestão de eventos construída com **Next.js 15**, **Prisma** e **SQLite**.
 
-First, run the development server:
+---
+
+## Pré-requisitos
+
+- [Node.js](https://nodejs.org/) 18+
+- npm (incluso com o Node.js)
+
+---
+
+## Setup — Primeira vez (ou novo computador)
+
+Siga os passos abaixo **na ordem**:
+
+### 1. Clone o repositório e entre na pasta
+
+```bash
+git clone <url-do-repositorio>
+cd Standora/web
+```
+
+### 2. Configure as variáveis de ambiente
+
+Copie o arquivo de exemplo e ajuste os valores se necessário:
+
+```bash
+cp .env.example .env
+```
+
+> O arquivo `.env.example` já contém os valores padrão para desenvolvimento local.
+> Em produção, gere um novo `AUTH_SECRET` com: `openssl rand -base64 32`
+
+### 3. Instale as dependências
+
+```bash
+npm install
+```
+
+### 4. Gere o Prisma Client
+
+```bash
+npx prisma generate
+```
+
+### 5. Crie o banco de dados e aplique as migrations
+
+```bash
+npx prisma migrate deploy
+```
+
+> Isso cria o arquivo `dev.db` localmente com toda a estrutura de tabelas.
+
+### 6. Popule o banco com dados iniciais
+
+```bash
+npx prisma db seed
+```
+
+> Isso cria a organização demo e o usuário admin para primeiro acesso.
+
+### 7. Inicie o servidor de desenvolvimento
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Acesse [http://localhost:3000](http://localhost:3000) no navegador.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Acesso demo
 
-## Learn More
+Após rodar o seed, utilize as credenciais abaixo para entrar na aplicação:
 
-To learn more about Next.js, take a look at the following resources:
+| Campo | Valor |
+|---|---|
+| **Email** | `admin@standora.com` |
+| **Senha** | `standora123` |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Resumo rápido (após o primeiro setup)
 
-## Deploy on Vercel
+```bash
+npm install
+npx prisma generate
+npx prisma migrate deploy
+npx prisma db seed
+npm run dev
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Comandos Prisma úteis
+
+| Comando | O que faz |
+|---|---|
+| `npx prisma generate` | Gera o client tipado a partir do `schema.prisma` |
+| `npx prisma migrate deploy` | Aplica migrations pendentes no banco |
+| `npx prisma migrate dev` | Cria uma nova migration em desenvolvimento |
+| `npx prisma studio` | Abre interface visual para explorar o banco |
+| `npx prisma db push` | Sincroniza o schema sem criar migration (prototipagem) |
+
+---
+
+## Estrutura do projeto
+
+```
+web/
+├── prisma/
+│   ├── schema.prisma   # Modelos do banco de dados
+│   └── dev.db          # Banco SQLite local (não vai ao git)
+├── src/
+│   ├── app/            # Rotas e páginas (Next.js App Router)
+│   ├── components/     # Componentes reutilizáveis
+│   └── auth.ts         # Configuração do NextAuth
+├── .env                # Variáveis de ambiente (local)
+└── .env.example        # Template de variáveis de ambiente
+```
