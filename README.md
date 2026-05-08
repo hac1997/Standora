@@ -27,6 +27,3 @@ npx prisma generate
 ```bash
 npm run dev
 ```
-
-```
-```
