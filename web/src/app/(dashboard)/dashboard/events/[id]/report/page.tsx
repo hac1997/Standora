@@ -4,14 +4,10 @@ import { notFound } from "next/navigation";
 export default async function EventReportPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  let event: Awaited<ReturnType<typeof prisma.event.findUnique>> & {
-    stands: { status: string; basePrice: number }[];
-    exhibitors: { id: string }[];
-    expenses: { status: string; amount: number }[];
-  } | null = null;
+  let event = null;
 
   try {
-    event = await prisma.event.findUnique({ where: { id }, include: { stands: true, exhibitors: true, expenses: true } }) as typeof event;
+    event = await prisma.event.findUnique({ where: { id }, include: { stands: true, exhibitors: true, expenses: true } });
   } catch { event = null; }
 
   if (!event) notFound();

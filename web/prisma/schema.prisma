@@ -92,12 +92,13 @@ model Event {
 }
 
 model EventMap {
-  id         String   @id @default(cuid())
-  eventId    String   @unique
-  canvasJson String   @default("{\"stands\":[],\"areas\":[]}")
+  id           String   @id @default(cuid())
+  eventId      String   @unique
+  canvasJson   String   @default("{\"stands\":[],\"areas\":[]}")
   floorPlanUrl String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  scaleRatio   Float?   // metros por 100 pixels (ex: 1.0 => 100px = 1m)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
 }
@@ -114,6 +115,7 @@ model Stand {
   basePrice   Float    @default(0)
   status      String   @default("disponivel")
   exhibitorId String?
+  photoUrl    String?
   createdAt   DateTime @default(now())
 
   event     Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)

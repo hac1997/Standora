@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useState, use, useCallback } from "react";
 
 interface Expense { id: string; description: string; category: string; amount: number; dueDate: string; status: string; }
 interface FinanceData { expenses: Expense[]; revenue: number; totalExpenses: number; margin: number; }
@@ -21,8 +21,12 @@ export default function FinancePage({ params }: { params: Promise<{ id: string }
   const [form, setForm] = useState({ description: "", category: "outros", amount: "", dueDate: "" });
   const [saving, setSaving] = useState(false);
 
-  async function load() { const res = await fetch(`/api/events/${id}/finance`); setData(await res.json()); }
-  useEffect(() => { load(); }, [id]);
+  const load = useCallback(async () => {
+    const res = await fetch(`/api/events/${id}/finance`);
+    setData(await res.json());
+  }, [id]);
+
+  useEffect(() => { load(); }, [load]);
 
   async function handleAddExpense(e: React.FormEvent) {
     e.preventDefault();

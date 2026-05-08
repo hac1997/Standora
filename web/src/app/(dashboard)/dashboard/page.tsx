@@ -7,17 +7,17 @@ export default async function DashboardPage() {
   const orgId = (session?.user as { organizationId?: string })?.organizationId;
   const firstName = session?.user?.name?.split(" ")[0] || "Usuário";
 
-  let events: Awaited<ReturnType<typeof prisma.event.findMany>> & { stands: { status: string; basePrice: number }[] }[] = [];
-  try {
-    events = orgId
-      ? await prisma.event.findMany({
-          where: { organizationId: orgId },
-          include: { _count: { select: { stands: true, exhibitors: true } }, stands: true },
-          orderBy: { createdAt: "desc" },
-          take: 6,
-        })
-      : [];
-  } catch { events = []; }
+  const events = await (async () => {
+    try {
+      if (!orgId) return [];
+      return await prisma.event.findMany({
+        where: { organizationId: orgId },
+        include: { _count: { select: { stands: true, exhibitors: true } }, stands: true },
+        orderBy: { createdAt: "desc" },
+        take: 6,
+      });
+    } catch { return []; }
+  })();
 
   const activeEvents = events.filter((e) => e.status !== "encerrado").length;
   const totalStands = events.reduce((s, e) => s + e._count.stands, 0);

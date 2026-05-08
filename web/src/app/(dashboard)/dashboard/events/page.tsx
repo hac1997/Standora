@@ -18,16 +18,16 @@ export default async function EventsPage() {
   const session = await auth();
   const orgId = (session?.user as { organizationId?: string })?.organizationId;
 
-  let events: Awaited<ReturnType<typeof prisma.event.findMany>> & { stands: { status: string; basePrice: number }[] }[] = [];
-  try {
-    events = orgId
-      ? await prisma.event.findMany({
-          where: { organizationId: orgId },
-          include: { _count: { select: { stands: true, exhibitors: true } }, stands: true },
-          orderBy: { createdAt: "desc" },
-        })
-      : [];
-  } catch { events = []; }
+  const events = await (async () => {
+    try {
+      if (!orgId) return [];
+      return await prisma.event.findMany({
+        where: { organizationId: orgId },
+        include: { _count: { select: { stands: true, exhibitors: true } }, stands: true },
+        orderBy: { createdAt: "desc" },
+      });
+    } catch { return []; }
+  })();
 
   return (
     <div>

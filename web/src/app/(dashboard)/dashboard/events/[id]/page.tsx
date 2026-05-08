@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { notFound } from "next/navigation";
+import EventActions from "./EventActions";
 
 const STATUS: Record<string, { label: string; bg: string }> = {
   rascunho:     { label: "Rascunho",     bg: "bg-gray-100 text-gray-600" },
@@ -16,16 +17,12 @@ const TYPE_MAP: Record<string, string> = {
 export default async function EventInfoPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  let event: Awaited<ReturnType<typeof prisma.event.findUnique>> & {
-    _count: { stands: number; exhibitors: number };
-    stands: { status: string; basePrice: number }[];
-  } | null = null;
-
+  let event = null;
   try {
     event = await prisma.event.findUnique({
       where: { id },
       include: { _count: { select: { stands: true, exhibitors: true } }, stands: true },
-    }) as typeof event;
+    });
   } catch { event = null; }
 
   if (!event) notFound();
@@ -50,6 +47,20 @@ export default async function EventInfoPage({ params }: { params: Promise<{ id: 
         <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-md ${st.bg}`}>{st.label}</span>
       </div>
 
+      {/* Lifecycle actions */}
+      <div className="mb-6">
+        <EventActions event={{
+          id: event.id,
+          name: event.name,
+          description: event.description,
+          type: event.type,
+          status: event.status,
+          startDate: event.startDate.toISOString(),
+          endDate: event.endDate.toISOString(),
+          estimatedParticipants: event.estimatedParticipants,
+          estimatedExhibitors: event.estimatedExhibitors,
+        }} />
+      </div>
       {/* KPIs */}
       <div className="grid grid-cols-4 gap-3 mb-6">
         {[

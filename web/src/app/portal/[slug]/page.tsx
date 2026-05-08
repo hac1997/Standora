@@ -2,20 +2,21 @@
 
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
-import Link from "next/link";
-
 const MapEditor = dynamic(() => import("@/components/map/MapEditor"), { ssr: false });
 
 interface Stand {
   id: string;
   name: string;
+  shape: "rect" | "polygon";
   x: number;
   y: number;
   width: number;
   height: number;
+  points: number[];
   colorHex: string;
   basePrice: number;
-  status: "disponivel" | "reservado" | "ocupado";
+  status: string;
+  photoUrl?: string;
 }
 
 interface EventData {

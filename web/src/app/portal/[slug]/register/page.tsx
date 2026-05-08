@@ -1,32 +1,101 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import {
+  maskCNPJ, maskPhone,
+  validateEmail, validatePhone, validateCNPJ, validatePassword, validateRequired,
+} from "@/lib/validation";
 
-export default function ExhibitorRegisterPage({ params }: { params: Promise<{ slug: string }> }) {
-  const router = useRouter();
+export default function ExhibitorRegisterPage() {
   const [tab, setTab] = useState<"login" | "register">("register");
   const [form, setForm] = useState({ companyName: "", cnpj: "", contactName: "", email: "", phone: "", password: "" });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [apiError, setApiError] = useState("");
 
+  // Masked change handler
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
+    const { name, value } = e.target;
+    let masked = value;
+    if (name === "cnpj")  masked = maskCNPJ(value);
+    if (name === "phone") masked = maskPhone(value);
+    setForm((p) => ({ ...p, [name]: masked }));
+    if (touched[name]) validate(name, masked);
+  }
+
+  function handleBlur(e: React.FocusEvent<HTMLInputElement>) {
+    const { name, value } = e.target;
+    setTouched((p) => ({ ...p, [name]: true }));
+    validate(name, value);
+  }
+
+  function validate(name: string, value: string): boolean {
+    let msg = "";
+    if (name === "companyName") msg = validateRequired(value, "Nome da empresa");
+    if (name === "contactName") msg = validateRequired(value, "Nome do responsável");
+    if (name === "email")       msg = validateEmail(value);
+    if (name === "phone")       msg = validatePhone(value);
+    if (name === "cnpj")        msg = validateCNPJ(value);
+    if (name === "password")    msg = validatePassword(value);
+    setErrors((p) => ({ ...p, [name]: msg }));
+    return !msg;
+  }
+
+  function validateAll(): boolean {
+    const fields = Object.keys(form) as (keyof typeof form)[];
+    let ok = true;
+    const newErrors: Record<string, string> = {};
+    const newTouched: Record<string, boolean> = {};
+    fields.forEach((name) => {
+      newTouched[name] = true;
+      let msg = "";
+      if (name === "companyName") msg = validateRequired(form[name], "Nome da empresa");
+      if (name === "contactName") msg = validateRequired(form[name], "Nome do responsável");
+      if (name === "email")       msg = validateEmail(form[name]);
+      if (name === "phone")       msg = validatePhone(form[name]);
+      if (name === "cnpj")        msg = validateCNPJ(form[name]);
+      if (name === "password")    msg = validatePassword(form[name]);
+      if (msg) ok = false;
+      newErrors[name] = msg;
+    });
+    setErrors(newErrors);
+    setTouched(newTouched);
+    return ok;
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!validateAll()) return;
     setLoading(true);
-    setError("");
-    // TODO: call API
+    setApiError("");
     setTimeout(() => {
       setLoading(false);
-      setError("Funcionalidade em desenvolvimento.");
+      setApiError("Funcionalidade em desenvolvimento.");
     }, 1000);
   }
 
-  const inputClass = "w-full px-4 py-3 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all text-sm";
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault();
+    const emailOk = validate("email", form.email);
+    const passOk  = validate("password", form.password);
+    setTouched({ email: true, password: true });
+    if (!emailOk || !passOk) return;
+    setLoading(true);
+    setApiError("");
+    setTimeout(() => { setLoading(false); setApiError("Funcionalidade em desenvolvimento."); }, 1000);
+  }
+
+  function inputCls(name: string) {
+    const base = "w-full px-4 py-3 bg-white/[0.04] border rounded-xl text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:border-transparent transition-all text-sm";
+    const err  = touched[name] && errors[name];
+    return `${base} ${err ? "border-red-500/60 focus:ring-red-500" : "border-white/[0.08] focus:ring-violet-500"}`;
+  }
+
+  function FieldError({ name }: { name: string }) {
+    if (!touched[name] || !errors[name]) return null;
+    return <p className="text-red-400 text-[11px] mt-1 ml-0.5">{errors[name]}</p>;
+  }
 
   return (
     <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center p-4 relative overflow-hidden">
@@ -50,7 +119,7 @@ export default function ExhibitorRegisterPage({ params }: { params: Promise<{ sl
             {(["register", "login"] as const).map((t) => (
               <button
                 key={t}
-                onClick={() => setTab(t)}
+                onClick={() => { setTab(t); setErrors({}); setTouched({}); setApiError(""); }}
                 className={`flex-1 py-4 text-sm font-semibold transition-all ${tab === t ? "text-white border-b-2 border-violet-500" : "text-slate-500 hover:text-slate-300"}`}
               >
                 {t === "register" ? "Primeiro acesso" : "Já tenho cadastro"}
@@ -60,50 +129,79 @@ export default function ExhibitorRegisterPage({ params }: { params: Promise<{ sl
 
           <div className="p-8">
             {tab === "register" ? (
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-3" noValidate>
                 <div className="grid grid-cols-2 gap-3">
+                  {/* Nome da empresa */}
                   <div className="col-span-2">
                     <label className="block text-xs font-medium text-slate-400 mb-1.5">Nome da empresa *</label>
-                    <input name="companyName" required placeholder="Empresa Ltda." value={form.companyName} onChange={handleChange} className={inputClass} />
+                    <input name="companyName" placeholder="Empresa Ltda." value={form.companyName}
+                      onChange={handleChange} onBlur={handleBlur} className={inputCls("companyName")} />
+                    <FieldError name="companyName" />
                   </div>
+                  {/* CNPJ */}
                   <div>
                     <label className="block text-xs font-medium text-slate-400 mb-1.5">CNPJ</label>
-                    <input name="cnpj" placeholder="00.000.000/0001-00" value={form.cnpj} onChange={handleChange} className={inputClass} />
+                    <input name="cnpj" placeholder="00.000.000/0001-00" value={form.cnpj}
+                      onChange={handleChange} onBlur={handleBlur} className={inputCls("cnpj")} />
+                    <FieldError name="cnpj" />
                   </div>
+                  {/* Telefone */}
                   <div>
                     <label className="block text-xs font-medium text-slate-400 mb-1.5">Telefone</label>
-                    <input name="phone" placeholder="(11) 99999-9999" value={form.phone} onChange={handleChange} className={inputClass} />
+                    <input name="phone" placeholder="(11) 99999-9999" value={form.phone}
+                      onChange={handleChange} onBlur={handleBlur} className={inputCls("phone")} />
+                    <FieldError name="phone" />
                   </div>
+                  {/* Nome do responsável */}
                   <div className="col-span-2">
                     <label className="block text-xs font-medium text-slate-400 mb-1.5">Nome do responsável *</label>
-                    <input name="contactName" required placeholder="João Silva" value={form.contactName} onChange={handleChange} className={inputClass} />
+                    <input name="contactName" placeholder="João Silva" value={form.contactName}
+                      onChange={handleChange} onBlur={handleBlur} className={inputCls("contactName")} />
+                    <FieldError name="contactName" />
                   </div>
+                  {/* Email */}
                   <div className="col-span-2">
                     <label className="block text-xs font-medium text-slate-400 mb-1.5">Email *</label>
-                    <input name="email" type="email" required placeholder="contato@empresa.com" value={form.email} onChange={handleChange} className={inputClass} />
+                    <input name="email" type="email" placeholder="contato@empresa.com" value={form.email}
+                      onChange={handleChange} onBlur={handleBlur} className={inputCls("email")} />
+                    <FieldError name="email" />
                   </div>
+                  {/* Senha */}
                   <div className="col-span-2">
                     <label className="block text-xs font-medium text-slate-400 mb-1.5">Senha *</label>
-                    <input name="password" type="password" required placeholder="••••••••" value={form.password} onChange={handleChange} className={inputClass} />
+                    <input name="password" type="password" placeholder="Mínimo 8 caracteres" value={form.password}
+                      onChange={handleChange} onBlur={handleBlur} className={inputCls("password")} />
+                    <FieldError name="password" />
                   </div>
                 </div>
-                {error && <p className="text-red-400 text-xs bg-red-500/10 border border-red-500/20 px-3 py-2 rounded-xl">{error}</p>}
-                <button type="submit" disabled={loading} className="w-full py-3 bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-500 hover:to-blue-500 text-white font-semibold rounded-xl text-sm transition-all disabled:opacity-50 mt-2">
+
+                {apiError && (
+                  <p className="text-red-400 text-xs bg-red-500/10 border border-red-500/20 px-3 py-2 rounded-xl">{apiError}</p>
+                )}
+                <button type="submit" disabled={loading}
+                  className="w-full py-3 bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-500 hover:to-blue-500 text-white font-semibold rounded-xl text-sm transition-all disabled:opacity-50 mt-2">
                   {loading ? "Criando conta..." : "Criar conta e participar"}
                 </button>
               </form>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleLogin} className="space-y-4" noValidate>
                 <div>
                   <label className="block text-xs font-medium text-slate-400 mb-1.5">Email</label>
-                  <input name="email" type="email" required placeholder="contato@empresa.com" value={form.email} onChange={handleChange} className={inputClass} />
+                  <input name="email" type="email" placeholder="contato@empresa.com" value={form.email}
+                    onChange={handleChange} onBlur={handleBlur} className={inputCls("email")} />
+                  <FieldError name="email" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-slate-400 mb-1.5">Senha</label>
-                  <input name="password" type="password" required placeholder="••••••••" value={form.password} onChange={handleChange} className={inputClass} />
+                  <input name="password" type="password" placeholder="••••••••" value={form.password}
+                    onChange={handleChange} onBlur={handleBlur} className={inputCls("password")} />
+                  <FieldError name="password" />
                 </div>
-                {error && <p className="text-red-400 text-xs bg-red-500/10 border border-red-500/20 px-3 py-2 rounded-xl">{error}</p>}
-                <button type="submit" disabled={loading} className="w-full py-3 bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-500 hover:to-blue-500 text-white font-semibold rounded-xl text-sm transition-all disabled:opacity-50 mt-2">
+                {apiError && (
+                  <p className="text-red-400 text-xs bg-red-500/10 border border-red-500/20 px-3 py-2 rounded-xl">{apiError}</p>
+                )}
+                <button type="submit" disabled={loading}
+                  className="w-full py-3 bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-500 hover:to-blue-500 text-white font-semibold rounded-xl text-sm transition-all disabled:opacity-50 mt-2">
                   {loading ? "Entrando..." : "Entrar"}
                 </button>
               </form>
