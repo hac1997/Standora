@@ -9,6 +9,8 @@ Plataforma de gestão de eventos construída com **Next.js 15**, **Prisma** e **
 - [Node.js](https://nodejs.org/) 18+
 - npm (incluso com o Node.js)
 
+> Antes de rodar `npm install`, baixe e instale a versão mais atualizada do Node.js diretamente de https://nodejs.org/.
+
 ---
 
 ## Setup — Primeira vez (ou novo computador)
@@ -38,6 +40,8 @@ cp .env.example .env
 ```bash
 npm install
 ```
+
+> Se você estiver usando o Node.js recém-instalado, confirme que `node --version` e `npm --version` retornem valores compatíveis antes de prosseguir.
 
 ### 4. Gere o Prisma Client
 
@@ -86,10 +90,19 @@ Após rodar o seed, utilize as credenciais abaixo para entrar na aplicação:
 ## Resumo rápido (após o primeiro setup)
 
 ```bash
+# 1. Instale dependências
 npm install
+
+# 2. Gere o Prisma Client
 npx prisma generate
+
+# 3. Sincronize o schema e o banco de dados
 npx prisma db push
+
+# 4. Popule o banco com dados iniciais
 npx prisma db seed
+
+# 5. Inicie o servidor de desenvolvimento
 npm run dev
 ```
 
