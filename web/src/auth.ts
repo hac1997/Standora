@@ -25,6 +25,7 @@ function getUser(email: string): DbUser | undefined {
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   ...authConfig,
+  secret: process.env.AUTH_SECRET,
   session: { strategy: "jwt" },
   providers: [
     Credentials({
