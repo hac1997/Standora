@@ -29,6 +29,7 @@ async function getUser(email: string): Promise<DbUser | null> {
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   ...authConfig,
+  secret: process.env.AUTH_SECRET,
   session: { strategy: "jwt" },
   providers: [
     Credentials({
