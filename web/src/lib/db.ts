@@ -1,24 +1,19 @@
 import { PrismaClient } from "@prisma/client";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
-import path from "path";
+import { PrismaPg } from "@prisma/adapter-pg";
 
-// Prisma 7 requires a driver adapter for SQLite.
-// PrismaBetterSqlite3 takes a config object with `url`, NOT a Database instance.
-// The adapter manages the better-sqlite3 connection internally.
-// In dev, we never cache in globalThis to avoid hot-reload private-field corruption.
+// Prisma 7 requires a driver adapter for all database connections.
+// PrismaPg reads the DATABASE_URL from the environment automatically.
+
+const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
 
 function createPrismaClient(): PrismaClient {
-  const dbPath = path.resolve(process.cwd(), "dev.db");
-  const adapter = new PrismaBetterSqlite3({ url: `file:${dbPath}` });
+  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
   return new PrismaClient({ adapter });
 }
 
-declare global {
-  // eslint-disable-next-line no-var
-  var _prisma: PrismaClient | undefined;
-}
-
 export const prisma: PrismaClient =
-  process.env.NODE_ENV === "production"
-    ? (global._prisma ?? (global._prisma = createPrismaClient()))
-    : createPrismaClient();
+  globalForPrisma.prisma ?? createPrismaClient();
+
+if (process.env.NODE_ENV !== "production") {
+  globalForPrisma.prisma = prisma;
+}

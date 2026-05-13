@@ -2,8 +2,7 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { authConfig } from "@/auth.config";
-import Database from "better-sqlite3";
-import path from "path";
+import { prisma } from "@/lib/db";
 
 type DbUser = {
   id: string;
@@ -14,13 +13,18 @@ type DbUser = {
   organizationId: string | null;
 };
 
-function getUser(email: string): DbUser | undefined {
-  const db = new Database(path.resolve(process.cwd(), "dev.db"), { readonly: true });
-  try {
-    return db.prepare("SELECT id, name, email, password, role, organizationId FROM User WHERE email = ?").get(email) as DbUser | undefined;
-  } finally {
-    db.close();
-  }
+async function getUser(email: string): Promise<DbUser | null> {
+  return prisma.user.findUnique({
+    where: { email },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      password: true,
+      role: true,
+      organizationId: true,
+    },
+  });
 }
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
@@ -38,7 +42,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           return null;
         }
 
-        const user = getUser(credentials.email as string);
+        const user = await getUser(credentials.email as string);
 
         if (!user || !user.password) {
           return null;

@@ -8,6 +8,10 @@
 
 .env
 
+# SQLite (desenvolvimento local legado)
+*.db
+*.db-journal
+
 # testing
 /coverage
 
